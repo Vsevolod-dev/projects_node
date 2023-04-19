@@ -26,8 +26,7 @@ const Image = sequelize.define<Image>('image', {
       allowNull: false
     },
     project_id: {
-      type: DataTypes.BIGINT.UNSIGNED,
-      allowNull: false
+      type: DataTypes.BIGINT.UNSIGNED
     },
   }, 
   {

@@ -8,7 +8,7 @@ export const getProfile = async (req: Request, res: Response) => {
     let userId = (req as CustomRequest).userId // own profile
 
     if (req.params.id) {
-        userId = req.params.id // alien profile
+        userId = parseInt(req.params.id) // alien profile
     }
 
     const user = await User.findByPk(userId)

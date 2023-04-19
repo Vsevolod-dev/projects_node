@@ -1,4 +1,4 @@
-import {Model, CreationOptional, InferAttributes, InferCreationAttributes} from "sequelize";
+import {Model, CreationOptional, InferAttributes, InferCreationAttributes, HasManyGetAssociationsMixin, HasManyAddAssociationsMixin} from "sequelize";
 import Tag from "../../sequelize/models/tag";
 
 export default interface Project extends Model<InferAttributes<Project>, InferCreationAttributes<Project>> {
@@ -10,6 +10,6 @@ export default interface Project extends Model<InferAttributes<Project>, InferCr
     // tags?: Tag[]
 
     // addProjects: HasManyAddAssociationsMixin<Project, number>;
-    getTags?: HasManyGetAssociationsMixin<Tag>
-    addTags?: HasManyAddAssociationsMixin<Tag, number>
+    getTags: HasManyGetAssociationsMixin<Tag>
+    addTags: HasManyAddAssociationsMixin<Tag, number>
 }

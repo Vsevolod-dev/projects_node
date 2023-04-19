@@ -1,4 +1,5 @@
-import {Model, CreationOptional, InferAttributes, InferCreationAttributes} from "sequelize";
+import {Model, CreationOptional, InferAttributes, InferCreationAttributes, HasManySetAssociationsMixin} from "sequelize";
+import Project from "../../sequelize/models/project";
 
 export default interface Image extends Model<InferAttributes<Image>, InferCreationAttributes<Image>> {
     id: CreationOptional<number>;
@@ -6,5 +7,5 @@ export default interface Image extends Model<InferAttributes<Image>, InferCreati
     path: string,
     extension: string,
     size: number,
-    project_id: number,
+    project_id?: number,
 }

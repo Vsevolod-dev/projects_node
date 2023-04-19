@@ -2,8 +2,10 @@ import { Request, Response } from "express";
 import Project from "../sequelize/models/project";
 import Image from "../sequelize/models/image";
 import Tag from "../sequelize/models/tag";
+import { CustomRequest } from "../types";
 
 
+// TODO: validations
 export const getAllProjects = async (req: Request, res: Response) => {
     const projects = await Project.findAll()
     res.json(projects)
@@ -30,6 +32,7 @@ export const getProject = async (req: Request, res: Response) => {
 
 export const createProject = async (req: Request, res: Response) => {
     const { title, description, url, tags: tagsIds, images } = req.body
+    let userId = (req as CustomRequest).userId
 
     const promises = tagsIds.map(async (tag_id: number) => {
         const tag = await Tag.findByPk(tag_id)
@@ -44,9 +47,15 @@ export const createProject = async (req: Request, res: Response) => {
     Promise.all(promises).then(async (tagsIds) => {
         tagsIds = tagsIds.filter(tagsIds => tagsIds !== false)
         const project = await Project.create({
-            title, description, url, user_id: 2
+            title, description, url, user_id: userId
         }, { include: Tag })
         project.addTags(tagsIds)
+        images.forEach(async (imageName: string) => {
+            const image = await Image.findOne({where: {path: imageName}})
+            if (image) {
+                image.update({project_id: project.id})
+            }
+        });
         res.send('sucess')
      })
 }
