@@ -54,7 +54,6 @@ export const createProject = async (req: Request, res: Response) => {
 export const updateProject = async (req: Request, res: Response) => {
     const { id: projectId } = req.params
     const { title, description, url, tags: tagsIds, images} = req.body
-    console.log(title, description);
 
     const project = await Project.update({
         title, description, url
@@ -73,6 +72,6 @@ export const deleteProject = async (req: Request, res: Response) => {
     Project.destroy({where: {
         id: projectId
     }})
-    
+
     res.send('deleted')
 }
