@@ -1,21 +1,12 @@
-import express, { Request, Response, NextFunction } from 'express';
+import express from 'express';
+import * as profileController from '../../controllers/profileController'
+
+
 const router = express.Router()
 
-//Todo: add auth middleware
-router.get('/', (req: Request, res: Response) => {
-    res.json('profile')
-})
-
-router.get('/:id', (req, res) => {
-    res.json('id')
-})
-
-router.patch('/:id', (req, res) => {
-    res.json('update')
-})
-
-router.get('/:id/projects', (req, res) => {
-    res.json('projects')
-})
+router.get('/', profileController.getProfile)
+router.get('/:id', profileController.getProfile)
+router.patch('/', profileController.updateProfile)
+router.get('/:id/projects', profileController.profileProjects)
 
 export default router

@@ -48,7 +48,7 @@ const User = sequelize.define<User>(
   },
   {
     underscored: true,
-    paranoid: true
+    // paranoid: true
   }
 )
 

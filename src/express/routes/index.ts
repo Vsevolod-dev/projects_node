@@ -2,13 +2,16 @@ import express from "express";
 const router = express.Router();
 import ProfileRouter from "./ProfileRouter";
 import ProjectRouter from "./ProjectRouter";
+import AuthRouter from "./AuthRouter";
 import applyExtraSetup from "../../sequelize/extra-setup";
-/* router.use("/websites", checkAuth, require("./websites"));
-router.use("/languages", checkAuth, require("./languages")); */
 import sequelize from "../../sequelize";
+import checkAuth from "../middleware/authMiddleware";
+
+
 applyExtraSetup(sequelize)
 
-router.use("/profile", ProfileRouter);
+router.use("/profile", checkAuth, ProfileRouter);
 router.use("/projects", ProjectRouter);
+router.use("/auth", AuthRouter);
 
 export default router;
