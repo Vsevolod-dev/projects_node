@@ -1,5 +1,14 @@
-import {Model, CreationOptional, InferAttributes, InferCreationAttributes, HasManyGetAssociationsMixin, HasManyAddAssociationsMixin} from "sequelize";
+import {Model, 
+    CreationOptional, 
+    InferAttributes, 
+    InferCreationAttributes, 
+    HasManyGetAssociationsMixin, 
+    HasManyAddAssociationsMixin, 
+    HasManyRemoveAssociationsMixin,
+    HasManySetAssociationsMixin
+} from "sequelize";
 import Tag from "../../sequelize/models/tag";
+import Image from "./image";
 
 export default interface Project extends Model<InferAttributes<Project>, InferCreationAttributes<Project>> {
     id: CreationOptional<number>;
@@ -7,9 +16,10 @@ export default interface Project extends Model<InferAttributes<Project>, InferCr
     description?: string
     url?: string
     user_id: number
-    // tags?: Tag[]
+    images?: Image[]
 
     // addProjects: HasManyAddAssociationsMixin<Project, number>;
     getTags: HasManyGetAssociationsMixin<Tag>
     addTags: HasManyAddAssociationsMixin<Tag, number>
+    setTags: HasManySetAssociationsMixin<Tag, number>
 }

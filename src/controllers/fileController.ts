@@ -2,6 +2,7 @@ import { Request, Response } from "express"
 import formidable, { File } from "formidable"
 import os from "os"
 import Image from "../sequelize/models/image"
+import sequelize from "../sequelize"
 
 const form = formidable({
     filename: (name, ext, part, form) => {
@@ -19,30 +20,39 @@ const form = formidable({
     
 })
 
-export const upload = (req: Request, res: Response) => {
-    form.parse(req, async (err, fields, files) => {
-        if (err || !files.filetoupload) {
-            res.send(err)
-            return;
-        }
-        
-        const info = files.filetoupload as File
-
-        if (info.originalFilename && info.mimetype) {
-            const extension = info.mimetype.split('/')[1]
-
-            if (extension) {
-                Image.create({
-                    name: info.originalFilename,
-                    extension,
-                    size: info.size,
-                    path: info.newFilename
-                })
+export const upload = async (req: Request, res: Response) => {
+    const t = await sequelize.transaction()
+    let info: File | null = null
+    
+    try {
+        form.parse(req, async (err, fields, files) => {
+            if (err || !files.filetoupload) {
+                res.send(err)
+                return;
             }
-        }
+            
+            info = files.filetoupload as File
 
-        res.json(info)
-    });
+            if (info.originalFilename && info.mimetype) {
+                const extension = info.mimetype.split('/')[1]
+    
+                if (extension) {
+                    await Image.create({
+                        name: info.originalFilename,
+                        extension,
+                        size: info.size,
+                        path: info.newFilename
+                    }, {transaction: t})
+                }
+            }
+        });
+        
+        t.commit()
+        res.json({image: info, message: "Successfully uploaded"})
+    } catch (e) {
+        t.rollback()
+        res.status(500).json({message: "Uploading error"})
+    }
 }
 
 export const getImage = (req: Request, res: Response) => {

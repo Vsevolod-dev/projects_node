@@ -13,7 +13,8 @@ const dbPassword = process.env.DB_PASSWORD
 
 const sequelize: Sequelize = new Sequelize(dbSchema, dbUser, dbPassword, {
     host: dbHost,
-    dialect: dbDialect
+    dialect: dbDialect,
+    logging: false
 })
 
 // applyExtraSetup(sequelize)

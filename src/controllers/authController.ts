@@ -2,6 +2,7 @@ import { Request, Response } from "express"
 import bcrypt from 'bcrypt'
 import User from "../sequelize/models/user"
 import jwt from "jsonwebtoken"
+import sequelize from "../sequelize"
 
 
 export const login = async (req: Request, res: Response) => {
@@ -41,6 +42,7 @@ export const login = async (req: Request, res: Response) => {
 
 export const register = async (req: Request, res: Response) => {
     const {name, email, password, confirmPassword} = req.body
+    const t = await sequelize.transaction()
 
     if (!name || !email || !password || !confirmPassword) {
         res.status(400).send({message: 'Not enought data'})
@@ -61,19 +63,21 @@ export const register = async (req: Request, res: Response) => {
         return
     }
 
-    const hash = await bcrypt.hash(password, 7);
+    try {
+        const hash = await bcrypt.hash(password, 7);
 
-    if (hash) {
         const user = await User.create({
             name, 
             email, 
             password: hash
         }, {
-            
+            transaction: t
         })
 
-        res.send(user)
-    } else {
-        res.status(400).send({message: 'Something went wrong'})
+        await t.commit()
+        res.send({message: "Registeration successfully"})
+    } catch (e) {
+        await t.rollback()
+        res.status(500).send({message: "Register error"})
     }
 }

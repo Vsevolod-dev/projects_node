@@ -3,6 +3,8 @@ import Project from "../sequelize/models/project";
 import Image from "../sequelize/models/image";
 import Tag from "../sequelize/models/tag";
 import { CustomRequest } from "../types";
+import sequelize from "../sequelize";
+import ProjectTag from "../sequelize/models/projectTag";
 
 
 // TODO: validations
@@ -18,69 +20,157 @@ export const getProject = async (req: Request, res: Response) => {
         attributes: ['id', 'title', 'description', 'url', 'user_id'],
         include: [{
             model: Image,
-            attributes: ['id', 'name', 'path', 'size', 'extension', 'project_id'],
+            attributes: ['id', 'name', 'path'],
         },
         {
             model: Tag,
-            attributes: ['id', 'title']
+            attributes: ['id', 'title'],
+            through: {attributes: []} // removes junction table
         }]
     })
 
-    // const tags = await project?.getTags()
+    const tags = await project?.getTags()
     res.json(project)
 }
 
 export const createProject = async (req: Request, res: Response) => {
-    const { title, description, url, tags: tagsIds, images } = req.body
+    let { title, description, url, tags: tagsIds, images: imagesPath } = req.body
     let userId = (req as CustomRequest).userId
 
-    const promises = tagsIds.map(async (tag_id: number) => {
-        const tag = await Tag.findByPk(tag_id)
-        if (tag) {
-            return tag.id
-        } else {
-            return false
-        }
-    });
+    const t = await sequelize.transaction()
 
-    // TODO: add image attaching
-    Promise.all(promises).then(async (tagsIds) => {
-        tagsIds = tagsIds.filter(tagsIds => tagsIds !== false)
+    try {
         const project = await Project.create({
             title, description, url, user_id: userId
-        }, { include: Tag })
-        project.addTags(tagsIds)
-        images.forEach(async (imageName: string) => {
-            const image = await Image.findOne({where: {path: imageName}})
-            if (image) {
-                image.update({project_id: project.id})
-            }
-        });
-        res.send('sucess')
-     })
+        }, {transaction: t})
+
+        if (tagsIds) {
+            const tags = await Tag.findAll({
+                where: {
+                    id: tagsIds
+                }
+            })
+
+            tagsIds = tags.map((tag: Tag) => tag.id)
+            await project.setTags(tagsIds, {transaction: t})
+        }
+    
+        if (imagesPath) {
+            const images = await Image.findAll({
+                where: {
+                    path: imagesPath
+                }
+            })
+
+            images.forEach(async (image) => {
+                await image.update({project_id: project.id}, {transaction: t})
+            })
+        }
+    
+        await t.commit();
+        res.send({message: 'Creating successfully'})
+    } catch (e) {
+        await t.rollback()
+        res.status(500).send({message: 'Creating error', error: e})
+    }
 }
 
 export const updateProject = async (req: Request, res: Response) => {
     const { id: projectId } = req.params
-    const { title, description, url, tags: tagsIds, images} = req.body
+    let { title, description, url, tags: tagsIds, images: imagesPath} = req.body
 
-    const project = await Project.update({
-        title, description, url
-    }, {
-        where: { 
-            id: projectId 
+    const t = await sequelize.transaction()
+
+    try {
+        const project = await Project.findOne({
+            where: { 
+                id: projectId 
+            },
+            include: [
+                {
+                    model: Image, attributes: ['id', 'name', 'path']
+                },
+                {
+                    model: Tag, attributes: ['id', 'title'], through: { attributes: [] }
+                }
+            ]
+        })
+
+        if (!project) {
+            res.status(404).send({message: 'Project is not found'})
+            return
         }
-    })
 
-    res.json(project)
+        await project.update({
+            title, description, url
+        }, { transaction: t })
+
+        if (tagsIds) {
+            const tags = await Tag.findAll({
+                where: {
+                    id: tagsIds
+                }
+            })
+
+            tagsIds = tags.map((tag: Tag) => tag.id)
+            await project.setTags(tagsIds, { transaction: t })
+        }
+
+        if (imagesPath) {
+            const images = await Image.findAll({
+                where: {
+                    path: imagesPath
+                }
+            })
+
+            if (project.images) {
+                // removes old images from project
+                project.images.forEach(async (image) => {
+                    if (!imagesPath.includes(image.path)) {
+                        await Image.update({
+                            project_id: null
+                        },
+                        {
+                            where: {
+                                path: image.path
+                            },
+                            transaction: t
+                        })
+                    }
+                })
+            }
+
+            images.forEach(async (image) => {
+                await image.update({project_id: project.id}, { transaction: t })
+            })
+        }
+
+
+        await project.reload()
+        await t.commit()
+        res.send({project: project, message: 'Updating successfully'})
+    } catch (e) {
+        await t.rollback()
+        res.status(500).send({message: 'Updating error', error: e})
+    }
 }
 
 export const deleteProject = async (req: Request, res: Response) => {
     const { id: projectId } = req.params
 
-    Project.destroy({where: {
-        id: projectId
-    }})
+    const t = await sequelize.transaction()
+    try {
+        Project.destroy({
+            where: {
+                id: projectId
+            },
+            transaction: t
+        })
 
-    res.send('deleted')
+        await t.commit()
+        res.send({message: "Deleting successfully"})
+    } catch (e) {
+        await t.rollback()
+        res.status(500).send({message: "Deleting error", error: e})
+    }
 }
