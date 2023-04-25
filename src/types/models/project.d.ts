@@ -17,6 +17,7 @@ export default interface Project extends Model<InferAttributes<Project>, InferCr
     url?: string
     user_id: number
     images?: Image[]
+    image?: string
 
     // addProjects: HasManyAddAssociationsMixin<Project, number>;
     getTags: HasManyGetAssociationsMixin<Tag>

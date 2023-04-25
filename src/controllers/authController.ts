@@ -3,6 +3,7 @@ import bcrypt from 'bcrypt'
 import User from "../sequelize/models/user"
 import jwt from "jsonwebtoken"
 import sequelize from "../sequelize"
+import validator from 'validator';
 
 
 export const login = async (req: Request, res: Response) => {
@@ -49,6 +50,11 @@ export const register = async (req: Request, res: Response) => {
         return
     }
 
+    if (!validator.isEmail(email)) {
+        res.status(400).send({message: 'Email is not valid'})
+        return
+    }
+
     if (password !== confirmPassword) {
         res.status(400).send({message: 'Password mismatch'})
         return
@@ -75,7 +81,13 @@ export const register = async (req: Request, res: Response) => {
         })
 
         await t.commit()
-        res.send({message: "Registeration successfully"})
+
+        const payload = { userId: user.id.toString() }
+        const token = jwt.sign(payload, process.env.SECRET_KEY!, {
+            expiresIn: '24h',
+        });
+
+        res.send({message: "Registeration successfully", token})
     } catch (e) {
         await t.rollback()
         res.status(500).send({message: "Register error"})

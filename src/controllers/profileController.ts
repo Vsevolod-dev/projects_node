@@ -3,10 +3,12 @@ import User from "../sequelize/models/user";
 import { CustomRequest } from "../types";
 import Project from "../sequelize/models/project";
 import sequelize from "../sequelize";
+import validator from "validator";
 
 
 export const getProfile = async (req: Request, res: Response) => {
     let userId = (req as CustomRequest).userId // own profile
+    res.header('user_by_token', userId.toString())
 
     if (req.params.id) {
         userId = parseInt(req.params.id) // alien profile
@@ -24,6 +26,11 @@ export const updateProfile = async (req: Request, res: Response) => {
 
     if (!user) {
         res.status(404).send({message: 'User is not found'})
+        return
+    }
+
+    if (!validator.isMobilePhone(phone)) {
+        res.status(400).send({message: 'Phone is not valid'})
         return
     }
 

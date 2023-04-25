@@ -2,14 +2,29 @@ import { Request, Response } from "express";
 import Project from "../sequelize/models/project";
 import Image from "../sequelize/models/image";
 import Tag from "../sequelize/models/tag";
-import { CustomRequest } from "../types";
+import { CustomJwtPayload, CustomRequest } from "../types";
 import sequelize from "../sequelize";
-import ProjectTag from "../sequelize/models/projectTag";
+import jwt from "jsonwebtoken";
+import User from "../sequelize/models/user";
 
 
 // TODO: validations
 export const getAllProjects = async (req: Request, res: Response) => {
-    const projects = await Project.findAll()
+    const projects = await Project.findAll({
+        include: [{
+            model: Image,
+            attributes: ['path'],
+            limit: 1,
+        }]
+    })
+
+    projects.forEach(project => {
+        const images = project.getDataValue('images')
+        if (images && images[0] && images[0]['path']){
+            project.setDataValue('image', images[0]['path'])
+        }
+    })
+
     res.json(projects)
 }
 
@@ -20,17 +35,26 @@ export const getProject = async (req: Request, res: Response) => {
         attributes: ['id', 'title', 'description', 'url', 'user_id'],
         include: [{
             model: Image,
-            attributes: ['id', 'name', 'path'],
+            attributes: ['id', 'name', 'path', 'size'],
         },
         {
             model: Tag,
             attributes: ['id', 'title'],
             through: {attributes: []} // removes junction table
+        },
+        {
+            model: User,
+            attributes: ['id', 'name', 'email', 'job']
         }]
     })
 
-    const tags = await project?.getTags()
-    res.json(project)
+    const token = req.headers.authorization?.split(' ')[1]
+    if (token) {
+        const data = jwt.verify(token, process.env.SECRET_KEY!) as CustomJwtPayload;
+        res.header('user_by_token', data.userId.toString())
+    }
+
+    project ? res.json(project) : res.status(404).json({message: 'Project is not found'})
 }
 
 export const createProject = async (req: Request, res: Response) => {
@@ -173,4 +197,9 @@ export const deleteProject = async (req: Request, res: Response) => {
         await t.rollback()
         res.status(500).send({message: "Deleting error", error: e})
     }
+}
+
+export const getTags = async (req: Request, res: Response) => {
+    const tags = await Tag.findAll()
+    res.json(tags)
 }

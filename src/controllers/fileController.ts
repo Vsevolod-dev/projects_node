@@ -43,12 +43,16 @@ export const upload = async (req: Request, res: Response) => {
                         size: info.size,
                         path: info.newFilename
                     }, {transaction: t})
+
+                    t.commit()
+                    res.json({image: info, message: "Successfully uploaded"})
+                } else {
+                    res.status(400).json({message: "Uploading error"})
                 }
+            } else {
+                res.status(400).json({message: "Uploading error"})
             }
         });
-        
-        t.commit()
-        res.json({image: info, message: "Successfully uploaded"})
     } catch (e) {
         t.rollback()
         res.status(500).json({message: "Uploading error"})
