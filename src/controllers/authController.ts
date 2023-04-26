@@ -29,7 +29,7 @@ export const login = async (req: Request, res: Response) => {
         if (compareRes) {
             const payload = { userId: user.id.toString() }
             const token = jwt.sign(payload, process.env.SECRET_KEY!, {
-                expiresIn: '24h',
+                expiresIn: '30d',
             });
             res.send({'messsage': 'Success', token})
         } else {
@@ -84,7 +84,7 @@ export const register = async (req: Request, res: Response) => {
 
         const payload = { userId: user.id.toString() }
         const token = jwt.sign(payload, process.env.SECRET_KEY!, {
-            expiresIn: '24h',
+            expiresIn: '30d',
         });
 
         res.send({message: "Registeration successfully", token})

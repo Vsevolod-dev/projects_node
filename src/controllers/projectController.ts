@@ -50,8 +50,12 @@ export const getProject = async (req: Request, res: Response) => {
 
     const token = req.headers.authorization?.split(' ')[1]
     if (token) {
-        const data = jwt.verify(token, process.env.SECRET_KEY!) as CustomJwtPayload;
-        res.header('user_by_token', data.userId.toString())
+        try {
+            const data = jwt.verify(token, process.env.SECRET_KEY!) as CustomJwtPayload;
+            res.header('user_by_token', data.userId.toString())
+        } catch (e) {
+            
+        }
     }
 
     project ? res.json(project) : res.status(404).json({message: 'Project is not found'})
@@ -87,12 +91,12 @@ export const createProject = async (req: Request, res: Response) => {
             })
 
             images.forEach(async (image) => {
-                await image.update({project_id: project.id}, {transaction: t})
+                await image.update({project_id: project.id})
             })
         }
     
         await t.commit();
-        res.send({message: 'Creating successfully'})
+        res.send({message: 'Creating successfully', project})
     } catch (e) {
         await t.rollback()
         res.status(500).send({message: 'Creating error', error: e})
