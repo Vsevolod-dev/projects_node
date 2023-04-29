@@ -34,17 +34,17 @@ export const updateProfile = async (req: Request, res: Response) => {
         return
     }
 
-    const t = await sequelize.transaction()
+    const transaction = await sequelize.transaction()
 
     try {
         const result = await user.update({
             name, phone, job, github, instagram, telegram
-        }, { transaction: t })
+        }, { transaction })
 
-        await t.commit()
+        await transaction.commit()
         res.send({user: result, message: "Updating successfully"})
     } catch (e) {
-        t.rollback()
+        transaction.rollback()
         res.status(500).send({message: "Updating error"})
     }
 

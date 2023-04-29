@@ -65,12 +65,12 @@ export const createProject = async (req: Request, res: Response) => {
     let { title, description, url, tags: tagsIds, images: imagesPath } = req.body
     let userId = (req as CustomRequest).userId
 
-    const t = await sequelize.transaction()
+    const transaction = await sequelize.transaction()
 
     try {
         const project = await Project.create({
             title, description, url, user_id: userId
-        }, {transaction: t})
+        }, {transaction})
 
         if (tagsIds) {
             const tags = await Tag.findAll({
@@ -80,7 +80,7 @@ export const createProject = async (req: Request, res: Response) => {
             })
 
             tagsIds = tags.map((tag: Tag) => tag.id)
-            await project.setTags(tagsIds, {transaction: t})
+            await project.setTags(tagsIds, {transaction})
         }
     
         if (imagesPath) {
@@ -95,10 +95,10 @@ export const createProject = async (req: Request, res: Response) => {
             })
         }
     
-        await t.commit();
+        await transaction.commit();
         res.send({message: 'Creating successfully', project})
     } catch (e) {
-        await t.rollback()
+        await transaction.rollback()
         res.status(500).send({message: 'Creating error', error: e})
     }
 }
@@ -107,7 +107,7 @@ export const updateProject = async (req: Request, res: Response) => {
     const { id: projectId } = req.params
     let { title, description, url, tags: tagsIds, images: imagesPath} = req.body
 
-    const t = await sequelize.transaction()
+    const transaction = await sequelize.transaction()
 
     try {
         const project = await Project.findOne({
@@ -125,13 +125,14 @@ export const updateProject = async (req: Request, res: Response) => {
         })
 
         if (!project) {
+            await transaction.commit()
             res.status(404).send({message: 'Project is not found'})
             return
         }
 
         await project.update({
             title, description, url
-        }, { transaction: t })
+        }, { transaction })
 
         if (tagsIds) {
             const tags = await Tag.findAll({
@@ -141,7 +142,7 @@ export const updateProject = async (req: Request, res: Response) => {
             })
 
             tagsIds = tags.map((tag: Tag) => tag.id)
-            await project.setTags(tagsIds, { transaction: t })
+            await project.setTags(tagsIds, { transaction })
         }
 
         if (imagesPath) {
@@ -162,23 +163,23 @@ export const updateProject = async (req: Request, res: Response) => {
                             where: {
                                 path: image.path
                             },
-                            transaction: t
+                            transaction
                         })
                     }
                 })
             }
 
             images.forEach(async (image) => {
-                await image.update({project_id: project.id}, { transaction: t })
+                await image.update({project_id: project.id}, { transaction })
             })
         }
 
 
         await project.reload()
-        await t.commit()
+        await transaction.commit()
         res.send({project: project, message: 'Updating successfully'})
     } catch (e) {
-        await t.rollback()
+        await transaction.rollback()
         res.status(500).send({message: 'Updating error', error: e})
     }
 }
@@ -186,19 +187,19 @@ export const updateProject = async (req: Request, res: Response) => {
 export const deleteProject = async (req: Request, res: Response) => {
     const { id: projectId } = req.params
 
-    const t = await sequelize.transaction()
+    const transaction = await sequelize.transaction()
     try {
         Project.destroy({
             where: {
                 id: projectId
             },
-            transaction: t
+            transaction
         })
 
-        await t.commit()
+        await transaction.commit()
         res.send({message: "Deleting successfully"})
     } catch (e) {
-        await t.rollback()
+        await transaction.rollback()
         res.status(500).send({message: "Deleting error", error: e})
     }
 }

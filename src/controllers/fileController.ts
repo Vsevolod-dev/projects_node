@@ -21,12 +21,13 @@ const form = formidable({
 })
 
 export const upload = async (req: Request, res: Response) => {
-    const t = await sequelize.transaction()
+    const transaction = await sequelize.transaction()
     let info: File | null = null
     
     try {
         form.parse(req, async (err, fields, files) => {
             if (err || !files.filetoupload) {
+                await transaction.commit()
                 res.send(err)
                 return;
             }
@@ -42,19 +43,21 @@ export const upload = async (req: Request, res: Response) => {
                         extension,
                         size: info.size,
                         path: info.newFilename
-                    }, {transaction: t})
+                    }, {transaction})
 
-                    t.commit()
+                    await transaction.commit()
                     res.json({image: info, message: "Successfully uploaded"})
                 } else {
+                    await transaction.commit()
                     res.status(400).json({message: "Uploading error"})
                 }
             } else {
+                await transaction.commit()
                 res.status(400).json({message: "Uploading error"})
             }
         });
     } catch (e) {
-        t.rollback()
+        transaction.rollback()
         res.status(500).json({message: "Uploading error"})
     }
 }

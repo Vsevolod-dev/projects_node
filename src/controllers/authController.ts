@@ -68,7 +68,7 @@ export const register = async (req: Request, res: Response) => {
         return
     }
 
-    const t = await sequelize.transaction()
+    const transaction = await sequelize.transaction()
 
     try {
         const hash = await bcrypt.hash(password, 7);
@@ -78,10 +78,10 @@ export const register = async (req: Request, res: Response) => {
             email, 
             password: hash
         }, {
-            transaction: t
+            transaction
         })
 
-        await t.commit()
+        await transaction.commit()
 
         const payload = { userId: user.id.toString() }
         const token = jwt.sign(payload, process.env.SECRET_KEY!, {
@@ -90,7 +90,7 @@ export const register = async (req: Request, res: Response) => {
 
         res.send({message: "Registeration successfully", token})
     } catch (e) {
-        await t.rollback()
+        await transaction.rollback()
         res.status(500).send({message: "Register error"})
     }
 }
