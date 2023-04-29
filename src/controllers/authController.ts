@@ -43,7 +43,6 @@ export const login = async (req: Request, res: Response) => {
 
 export const register = async (req: Request, res: Response) => {
     const {name, email, password, confirmPassword} = req.body
-    const t = await sequelize.transaction()
 
     if (!name || !email || !password || !confirmPassword) {
         res.status(400).send({message: 'Not enought data'})
@@ -68,6 +67,8 @@ export const register = async (req: Request, res: Response) => {
         res.status(400).send({message: 'User with this email is already exist'})
         return
     }
+
+    const t = await sequelize.transaction()
 
     try {
         const hash = await bcrypt.hash(password, 7);
