@@ -63,7 +63,7 @@ export const getProject = async (req: Request, res: Response) => {
 
 export const createProject = async (req: Request, res: Response) => {
     let { title, description, url, tags: tagsIds, images: imagesPath } = req.body
-    let userId = (req as CustomRequest).userId
+    let userId = parseInt((req as CustomRequest).userId)
 
     const transaction = await sequelize.transaction()
 

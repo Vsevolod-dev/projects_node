@@ -16,7 +16,7 @@ const checkAuth = (req: Request, res: Response, next: NextFunction) => {
 
         const data = jwt.verify(token, process.env.SECRET_KEY!) as CustomJwtPayload;
 
-        (req as CustomRequest).userId = data.userId
+        (req as CustomRequest).userId = data.userId.toString()
 
         next()
     } catch (e) {

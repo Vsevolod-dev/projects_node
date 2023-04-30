@@ -7,7 +7,7 @@ import validator from "validator";
 
 
 export const getProfile = async (req: Request, res: Response) => {
-    let userId = (req as CustomRequest).userId // own profile
+    let userId = parseInt((req as CustomRequest).userId) // own profile
     res.header('user_by_token', userId.toString())
 
     if (req.params.id) {
@@ -20,7 +20,7 @@ export const getProfile = async (req: Request, res: Response) => {
 }
 
 export const updateProfile = async (req: Request, res: Response) => {
-    let userId = (req as CustomRequest).userId // own profile
+    let userId = parseInt((req as CustomRequest).userId) // own profile
     const {name, email, phone, job, github, instagram, telegram} = req.body
     const user = await User.findByPk(userId)
 
@@ -29,24 +29,26 @@ export const updateProfile = async (req: Request, res: Response) => {
         return
     }
 
-    if (!validator.isMobilePhone(phone)) {
+    if (phone && !validator.isMobilePhone(phone)) {
         res.status(400).send({message: 'Phone is not valid'})
         return
     }
 
-    if (!validator.isEmail(email)) {
-        res.status(400).send({message: 'Email is not valid'})
-        return
-    }
-
-    const existedUser = await User.findOne({where: {
-        email
-    }})
-
-    if (existedUser) {
-        if (existedUser.id !== userId) {
-            res.status(400).send({message: 'This email is in use by another user'})
+    if (email) {
+        if (!validator.isEmail(email)) {
+            res.status(400).send({message: 'Email is not valid'})
             return
+        }
+
+        const existedUser = await User.findOne({where: {
+            email
+        }})
+    
+        if (existedUser) {
+            if (existedUser.id !== userId) {
+                res.status(400).send({message: 'This email is in use by another user'})
+                return
+            }
         }
     }
 
