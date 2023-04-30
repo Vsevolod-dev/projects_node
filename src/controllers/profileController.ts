@@ -21,7 +21,7 @@ export const getProfile = async (req: Request, res: Response) => {
 
 export const updateProfile = async (req: Request, res: Response) => {
     let userId = (req as CustomRequest).userId // own profile
-    const {name, phone, job, github, instagram, telegram} = req.body
+    const {name, email, phone, job, github, instagram, telegram} = req.body
     const user = await User.findByPk(userId)
 
     if (!user) {
@@ -32,6 +32,22 @@ export const updateProfile = async (req: Request, res: Response) => {
     if (!validator.isMobilePhone(phone)) {
         res.status(400).send({message: 'Phone is not valid'})
         return
+    }
+
+    if (!validator.isEmail(email)) {
+        res.status(400).send({message: 'Email is not valid'})
+        return
+    }
+
+    const existedUser = await User.findOne({where: {
+        email
+    }})
+
+    if (existedUser) {
+        if (existedUser.id !== userId) {
+            res.status(400).send({message: 'This email is in use by another user'})
+            return
+        }
     }
 
     const transaction = await sequelize.transaction()
