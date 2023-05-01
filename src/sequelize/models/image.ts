@@ -28,6 +28,9 @@ const Image = sequelize.define<Image>('image', {
     project_id: {
       type: DataTypes.BIGINT.UNSIGNED
     },
+    order: {
+      type: DataTypes.INTEGER.UNSIGNED
+    }
   }, 
   {
     underscored: true,

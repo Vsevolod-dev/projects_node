@@ -8,20 +8,24 @@ import jwt from "jsonwebtoken";
 import User from "../sequelize/models/user";
 
 
-// TODO: validations
 export const getAllProjects = async (req: Request, res: Response) => {
     const projects = await Project.findAll({
         include: [{
             model: Image,
-            attributes: ['path'],
-            limit: 1,
+            attributes: ['path', 'order']
         }]
     })
 
-    projects.forEach(project => {
+    projects.forEach((project) => {
         const images = project.getDataValue('images')
-        if (images && images[0] && images[0]['path']){
-            project.setDataValue('image', images[0]['path'])
+
+        if (images) {
+            const image = images.find(image => image.order === 0)
+            if (image && image['path']) {
+                project.setDataValue('image', image['path'])
+            } else if (images[0] && images[0]['path']) { // if images without order, get first image
+                project.setDataValue('image', images[0]['path'])
+            }
         }
     })
 
@@ -45,7 +49,10 @@ export const getProject = async (req: Request, res: Response) => {
         {
             model: User,
             attributes: ['id', 'name', 'email', 'job']
-        }]
+        }],
+        order: [
+            [ Image, 'order', 'ASC' ]
+        ]
     })
 
     const token = req.headers.authorization?.split(' ')[1]
@@ -91,7 +98,8 @@ export const createProject = async (req: Request, res: Response) => {
             })
 
             images.forEach(async (image) => {
-                await image.update({project_id: project.id})
+                const id = imagesPath.indexOf(image.path)
+                await image.update({project_id: project.id, order: id})
             })
         }
     
@@ -170,7 +178,8 @@ export const updateProject = async (req: Request, res: Response) => {
             }
 
             images.forEach(async (image) => {
-                await image.update({project_id: project.id}, { transaction })
+                const id = imagesPath.indexOf(image.path)
+                await image.update({project_id: project.id, order: id}, { transaction })
             })
         }
 
