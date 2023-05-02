@@ -6,14 +6,75 @@ import { CreateProjectRequest, CustomJwtPayload, CustomRequest } from "../types"
 import sequelize from "../sequelize";
 import jwt from "jsonwebtoken";
 import User from "../sequelize/models/user";
+import { Op } from "sequelize";
 
 
 export const getAllProjects = async (req: Request, res: Response) => {
+    const {title, description, url, tags} = req.query
+
+    const filtering = []
+
+    if (title) {
+        filtering.push({
+            title: {
+              [Op.substring]: title
+            }
+        })
+    }
+
+    if (description) {
+        filtering.push({
+            description: {
+              [Op.substring]: description
+            }
+        })
+    }
+
+    if (url) {
+        filtering.push({
+            url: {
+              [Op.substring]: url
+            }
+        })
+    }
+
+    if (tags) {
+        filtering
+    }
+
+    let where: {
+        [Op.or]?: {}, 
+        '$tags.id$'?: []
+    } = {}
+
+    if (filtering.length) {
+        where = {
+            [Op.or]: filtering
+        }
+    }
+
+    if (tags) {
+        if (where[Op.or]) {
+            where['$tags.id$'] = tags as []
+        } else {
+            where = {
+                '$tags.id$': tags as []
+            }
+        }
+    }
+
     const projects = await Project.findAll({
-        include: [{
-            model: Image,
-            attributes: ['path', 'order']
-        }]
+        where,
+        include: [
+            {
+                model: Image,
+                attributes: ['path', 'order']
+            },
+            {
+                model: Tag,
+                attributes: []
+            }
+        ]
     })
 
     projects.forEach((project) => {
