@@ -9,4 +9,5 @@ export default interface Image extends Model<InferAttributes<Image>, InferCreati
     size: number,
     project_id?: number | null,
     order?: number
+    desc?: string
 }

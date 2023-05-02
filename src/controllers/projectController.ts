@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import Project from "../sequelize/models/project";
 import Image from "../sequelize/models/image";
 import Tag from "../sequelize/models/tag";
-import { CustomJwtPayload, CustomRequest } from "../types";
+import { CreateProjectRequest, CustomJwtPayload, CustomRequest } from "../types";
 import sequelize from "../sequelize";
 import jwt from "jsonwebtoken";
 import User from "../sequelize/models/user";
@@ -39,7 +39,7 @@ export const getProject = async (req: Request, res: Response) => {
         attributes: ['id', 'title', 'description', 'url', 'user_id'],
         include: [{
             model: Image,
-            attributes: ['id', 'name', 'path', 'size'],
+            attributes: ['id', 'name', 'path', 'size', 'desc'],
         },
         {
             model: Tag,
@@ -69,7 +69,7 @@ export const getProject = async (req: Request, res: Response) => {
 }
 
 export const createProject = async (req: Request, res: Response) => {
-    let { title, description, url, tags: tagsIds, images: imagesPath } = req.body
+    let { title, description, url, tags: tagsIds, images: requestImages }: CreateProjectRequest = req.body
     let userId = parseInt((req as CustomRequest).userId)
 
     const transaction = await sequelize.transaction()
@@ -90,16 +90,16 @@ export const createProject = async (req: Request, res: Response) => {
             await project.setTags(tagsIds, {transaction})
         }
     
-        if (imagesPath) {
+        if (requestImages) {
             const images = await Image.findAll({
                 where: {
-                    path: imagesPath
+                    path: requestImages.map(ri => ri.path)
                 }
             })
 
             images.forEach(async (image) => {
-                const id = imagesPath.indexOf(image.path)
-                await image.update({project_id: project.id, order: id})
+                const id = requestImages.findIndex(ri => ri.path === image.path)
+                await image.update({project_id: project.id, order: id, desc: requestImages[id]?.desc})
             })
         }
     
@@ -113,7 +113,8 @@ export const createProject = async (req: Request, res: Response) => {
 
 export const updateProject = async (req: Request, res: Response) => {
     const { id: projectId } = req.params
-    let { title, description, url, tags: tagsIds, images: imagesPath} = req.body
+    // let { title, description, url, tags: tagsIds, images: imagesPath} = req.body
+    let { title, description, url, tags: tagsIds, images: requestImages }: CreateProjectRequest = req.body
 
     const transaction = await sequelize.transaction()
 
@@ -153,17 +154,17 @@ export const updateProject = async (req: Request, res: Response) => {
             await project.setTags(tagsIds, { transaction })
         }
 
-        if (imagesPath) {
+        if (requestImages) {
             const images = await Image.findAll({
                 where: {
-                    path: imagesPath
+                    path: requestImages.map(ri => ri.path)
                 }
             })
 
             if (project.images) {
                 // removes old images from project
                 project.images.forEach(async (image) => {
-                    if (!imagesPath.includes(image.path)) {
+                    if (!requestImages.find(ri => ri.path === image.path)) {
                         await Image.update({
                             project_id: null
                         },
@@ -178,8 +179,8 @@ export const updateProject = async (req: Request, res: Response) => {
             }
 
             images.forEach(async (image) => {
-                const id = imagesPath.indexOf(image.path)
-                await image.update({project_id: project.id, order: id}, { transaction })
+                const id = requestImages.findIndex(ri => ri.path === image.path)
+                await image.update({project_id: project.id, order: id, desc: requestImages[id]?.desc}, { transaction })
             })
         }
 

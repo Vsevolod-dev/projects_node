@@ -7,9 +7,9 @@ module.exports = {
       type: Sequelize.DataTypes.INTEGER.UNSIGNED,
       after: "project_id"
     })
-},
+  },
 
-async down (queryInterface, Sequelize) {
-  return queryInterface.removeColumn('images', 'order')
-}
+  async down (queryInterface, Sequelize) {
+    return queryInterface.removeColumn('images', 'order')
+  }
 };

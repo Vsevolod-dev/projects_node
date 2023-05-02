@@ -30,6 +30,9 @@ const Image = sequelize.define<Image>('image', {
     },
     order: {
       type: DataTypes.INTEGER.UNSIGNED
+    },
+    desc: {
+      type: DataTypes.STRING
     }
   }, 
   {
